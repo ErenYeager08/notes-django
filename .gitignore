@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Django
+*.sqlite3
+*.log
+*.pot
+*.pyc
+*.mo
+*.db
+*.DS_Store
+
+# Media files
+media/
+
+# Static files (اگر میخوای فقط در سرور جمع بشن)
+staticfiles/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.sublime-project
+*.sublime-workspace
+
+# OS generated files
+Thumbs.db
+.DS_Store
+
+# dotenv files (حاوی secret key و پسورد)
+*.env
+
