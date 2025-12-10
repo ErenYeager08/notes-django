@@ -1,58 +1,59 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.views.generic import UpdateView
-from .models import Note
-from .forms import NoteForm
+from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse_lazy
-from django.contrib.auth import authenticate, login, logout
+from .models import Note
+from django.views.generic import UpdateView, DeleteView
+from .forms import NoteAddForm, SignUpForm
+from django.contrib.auth import login, logout, authenticate
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin
 
 # Create your views here.
-@login_required(login_url='logorsign')
-def task_list(request):
+def note_list(request): 
+    if not request.user.is_authenticated:
+        return redirect('logorsign')
     notes = Note.objects.filter(user=request.user)
-    return render(request, 'task_list.html', {'notes' : notes})
+    return render(request, 'note_list.html', {'notes' : notes})
 
-@login_required(login_url='logorsign')
-def task_note(request, pk):
+def note_detail(request, pk):
+    if not request.user.is_authenticated:
+        return redirect('logorsign')
     note = get_object_or_404(Note, pk=pk, user=request.user)
-    return render(request, 'task_note.html', {'note' : note})
+    return render(request, 'note_detail.html', {'note' : note})
 
-@login_required(login_url='logorsign')
-def task_delete(request, pk):
-    note = get_object_or_404(Note, pk=pk, user=request.user)
-    note.delete()
-    return redirect('home')
-    
-
-class NoteUpdateView(LoginRequiredMixin, UpdateView):
-    login_url = 'login'
-    model = Note
-    fields = ['title', 'text']
-    template_name = 'task_edit.html'
-    success_url = reverse_lazy('home')
-
-
-@login_required(login_url='logorsign')
-def task_add(request):
+def note_add(request):
+    if not request.user.is_authenticated:
+        return redirect('logorsign')
     if request.method == 'POST':
-        form = NoteForm(request.POST)
+        form = NoteAddForm(request.POST)
         if form.is_valid():
             notes = form.save(commit=False)
             notes.user = request.user
             notes.save()
             return redirect('home')
-
-
     else:
-        form = NoteForm()
-    return render(request, 'task_add.html', {'form': form})
+        form = NoteAddForm()
+    return render(request, 'note_add.html', {"form" : form})
 
-def logorsign(request):
-    return render(request, 'logorsign.html')
+class NoteUpdateView(UpdateView):
+    model = Note
+    form_class = NoteAddForm
+    template_name = "note_edit.html"
+    success_url = reverse_lazy('home')
+
+    def get_queryset(self):
+        return Note.objects.filter(user=self.request.user)
+    
+
+class NoteDeleteView(DeleteView):
+    model = Note
+    template_name = 'note_delete.html'
+    success_url = reverse_lazy('home')
+    
+    def get_queryset(self):
+        return Note.objects.filter(user=self.request.user)
 
 def login_user(request):
+    if request.user.is_authenticated:
+        return redirect('home')
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
@@ -61,10 +62,29 @@ def login_user(request):
             login(request, user)
             return redirect('home')
         else:
-            messages.error(request, "username or password is not correct")
-
+            messages.error(request, 'problemmmmmm')
     return render(request, 'login.html')
 
 def logout_user(request):
     logout(request)
     return redirect('home')
+
+def signup(request):
+    if request.user.is_authenticated:
+        return redirect('home')
+
+    if request.method == 'POST':
+        form = SignUpForm(request.POST)     
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            return redirect('home')
+
+        else:
+            messages.error(request, 'problem')
+    else:
+        form = SignUpForm()
+    return render(request, 'signup.html', {'form' : form})
+
+def logorsign(request):
+    return render(request, 'logorsign.html')
